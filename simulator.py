@@ -189,7 +189,6 @@ if __name__ == '__main__':
     processed_multi = 0
     processed_GTG = 0
     while(1) :
-        break
         if(inst_ptr is not None):
             instruction_now = instruction_set2[inst_ptr]
         else:
@@ -296,22 +295,35 @@ if __name__ == '__main__':
                 print('===============Add================')
                 pass
             elif instruction_now[0] == 3:
-                jump = None
-                if(instruction_now[2]==1):
-                    jump = inst_ptr+1
-                element_reader.input(1)
-                element_multi.input(0,instruction_now[1],jump)
-                instruction_valid = 1
+                while 1:
+                    jump = None
+                    if(instruction_now[2]==1):
+                        jump = inst_ptr+1
+                    element_reader.input(1)
+                    element_multi.input(0,instruction_now[1],jump)
+                    instruction_valid = 1
+                    if(inst_ptr+1<len(instruction_set2) and instruction_set2[inst_ptr+1][0]==3):
+                        inst_ptr += 1
+                        instruction_now = instruction_set2[inst_ptr]
+                    else:
+                        break
+
                 # print("ETE_INST_BUFF",element_multi.instruction_buffer)
                 print('===============Element_nulti================')
                 pass
             elif instruction_now[0] == 4:
-                if(mission_type==1 or mission_type==2):
-                    G_reader0.input(1)
-                if(mission_type==3 or mission_type==4):
-                    G_reader0.input(3)
-                GTG_controller.input(0,instruction_now[1], None)
-                instruction_valid = 1
+                while 1:
+                    if(mission_type==1 or mission_type==2):
+                        G_reader0.input(1)
+                    if(mission_type==3 or mission_type==4):
+                        G_reader0.input(3)
+                    GTG_controller.input(0,instruction_now[1], None)
+                    instruction_valid = 1
+                    if(inst_ptr+1<len(instruction_set2) and instruction_set2[inst_ptr+1][0]==4):
+                        inst_ptr += 1
+                        instruction_now = instruction_set2[inst_ptr]
+                    else:
+                        break
                 print('===============GTG================')
 
             elif instruction_now[0] == 5:
