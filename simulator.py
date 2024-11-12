@@ -1,7 +1,7 @@
 from PE import PE_array
 from ETE import ETE,controller,sfm_ETE
 from FTF import FTF
-from ETF_adder import ETF
+from ETF_accum import ETF
 from bram import bram, bram_reader
 from pinv import pinv
 
@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 import matplotlib as mpl
 
-mission_type = 2
+mission_type = 1
 
 if __name__ == '__main__':
     # param
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     elif(mission_type == 3 or mission_type == 4):
         ETE0 = pinv()
     sfm_ETE0 = sfm_ETE()
-    ETF0 = ETF()
+    ETF0 = ETF(mission_type)
     FTF0 = FTF()
     pinv0 = pinv()
     element_reader = bram_reader()
@@ -188,6 +188,9 @@ if __name__ == '__main__':
     processed_ADD = 0
     processed_multi = 0
     processed_GTG = 0
+
+    pallel_num = 0
+
     while(1) :
         if(inst_ptr is not None):
             instruction_now = instruction_set2[inst_ptr]
@@ -296,6 +299,7 @@ if __name__ == '__main__':
                 pass
             elif instruction_now[0] == 3:
                 while 1:
+                    pallel_num += 1
                     jump = None
                     if(instruction_now[2]==1):
                         jump = inst_ptr+1
@@ -313,6 +317,7 @@ if __name__ == '__main__':
                 pass
             elif instruction_now[0] == 4:
                 while 1:
+                    pallel_num += 1
                     if(mission_type==1 or mission_type==2):
                         G_reader0.input(1)
                     if(mission_type==3 or mission_type==4):
@@ -382,14 +387,15 @@ if __name__ == '__main__':
 
 
         GTG_ready = 0
-        if(mission_type==1 or mission_type==2):
+        if(mission_type==3 or mission_type==4):
             if(read_out[1]==1):
                 GTG_read_num += 1
             if(GTG_read_num >=3):
                 GTG_read_num-=3
                 GTG_ready = 1
-        if(mission_type==3 or mission_type==4):
-            GTG_ready = (read_out[1]==1)
+        if(mission_type==1 or mission_type==2):
+            GTG_ready = read_out[1]
+
         GTG_controller.input(GTG_ready, None, None)
         GTG_now = GTG_controller.step(1)
 
@@ -480,6 +486,7 @@ if __name__ == '__main__':
         wb_write_list = [inst_write, FTF_write]
 
         wb_read_valid,wb_write_valid,wb_read_out = wbm.step(wb_read_list,wb_write_list)
+        print("FTF_valid: ", FTF_mvalid)
         if FTF_mvalid>6:
             FTF0.step(6 ,wb_read_out[1])
         elif(FTF_mvalid != 0):
@@ -520,9 +527,9 @@ if __name__ == '__main__':
                 elif(instruction_now[0] == 2):
                     processed_ADD += 1
                 elif(instruction_now[0] == 3):
-                    processed_multi += 1
+                    processed_multi += pallel_num
                 elif(instruction_now[0] == 4):
-                    processed_GTG += 1
+                    processed_GTG += pallel_num
 
             if(necessery_ptr_buffer):
                 print('exec necessery')
@@ -540,6 +547,7 @@ if __name__ == '__main__':
                 inst_ptr = None
             pre_inst_ptr = inst_ptr
 
+        pallel_num = 0
         print("FTF",FTF0.Done,FTF0.input_buffer,FTF0.mb_data_num,FTF0.fb_data_num,FTF0.output_buffer,FTF0.process_target_buffer)
         if(mission_type==3 or mission_type==4):
             print("pinv",ETE0.input_buffer,ETE0.process_buffer,ETE0.Done)
