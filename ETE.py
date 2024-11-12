@@ -1,3 +1,5 @@
+import math
+
 class ETE:
     
     def __init__(self):
@@ -15,6 +17,8 @@ class ETE:
         self.input_buffer_empty = True
         self.output_buffer_empty = True
         self.target = None
+
+        self.Done = True
 
     def input(self, input_data, last):
        self.input_buffer.append(input_data)
@@ -89,6 +93,11 @@ class ETE:
         else:
             self.output_buffer_empty = True
 
+        if(self.input_buffer_empty and self.output_buffer_empty and self.adder_num==0 and self.adder_cycle==0 and all(k==0 for k in self.process_target_buffer)):
+            self.Done = True
+        else:
+            self.Done = False
+
 class controller:
     def __init__(self):
         self.input_data_buffer = 0
@@ -112,6 +121,50 @@ class controller:
                 return True
         return False
 
+class sfm_ETE:
+    
+    def __init__(self):
+        self.input_buffer = 0
+        self.process_buffer = []
+        self.add_num_buffer = []
+        self.add_buffer = []
+
+    def input(self, input_data, last):
+        if(last):
+            output_num = self.input_buffer+input_data
+            self.input_buffer = 0
+            multi_num = math.ceil(output_num / 3)
+            add_num = multi_num - 1
+            self.process_buffer.append(multi_num * 3)
+            self.add_num_buffer.append(add_num)
+            return multi_num, add_num
+        else :
+            self.input_buffer += input_data
+            return None, None
+    
+    def add(self):
+        if(self.process_buffer):
+            if(self.process_buffer[0]>0):
+                self.process_buffer[0] -= 1
+
+            if(self.process_buffer[0]==0):
+                self.process_buffer.pop(0)
+                add_num = self.add_num_buffer.pop(0)
+                add_cycle = add_num * 11
+                self.add_buffer.append(add_cycle)
+
+    def step(self):
+        if(self.add_buffer):
+            if(self.add_buffer[0]>0):
+                self.add_buffer[0] -= 1
+
+            if(self.add_buffer[0]==0):
+                self.add_buffer.pop(0)
+                return 1
+        
+        return None
+
+            
 
 if __name__ == '__main__':
     cycle_num = 0

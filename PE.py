@@ -1,12 +1,16 @@
 class PE:
     
-    def __init__(self):
+    def __init__(self,mission_type):
         self.input_buffer = []
         self.input_target_buffer = []
         self.input_instruction_buffer = []
 
-        self.process_target_buffer = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-        self.process_instruction_buffer = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        if(mission_type==1 or mission_type==2):
+            self.process_target_buffer = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            self.process_instruction_buffer = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        else:
+            self.process_target_buffer = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            self.process_instruction_buffer = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
         self.output_buffer = []
         self.output_instruction_buffer = []
@@ -23,7 +27,7 @@ class PE:
     def output(self, out_num):
         # print("PE_OUT_NOW: ", out_num, self.output_buffer, self.output_instruction_buffer)
         instruction_out = 0
-        if len(self.output_buffer) >= out_num and self.output_buffer:
+        if len(self.output_buffer) >= out_num and self.output_buffer and out_num != 0:
             instruction_out = self.output_instruction_buffer[0]
             self.output_buffer = self.output_buffer[out_num:]
             self.output_instruction_buffer = self.output_instruction_buffer[out_num:]
@@ -38,7 +42,10 @@ class PE:
             self.process_target_buffer.pop(0)
             self.process_target_buffer.append(self.input_target_buffer[0])
             self.process_instruction_buffer.pop(0)
-            self.process_instruction_buffer.append(self.input_instruction_buffer[0])
+            if(self.input_buffer and self.input_buffer[0]==1):
+                self.process_instruction_buffer.append(self.input_instruction_buffer[0])
+            else:
+                self.process_instruction_buffer.append(None)
         else:
             self.process_target_buffer.pop(0)
             self.process_target_buffer.append(0)
@@ -110,7 +117,7 @@ class PE:
         
 class PE_array:
 
-    def __init__(self, PE_num):
+    def __init__(self, PE_num, mission_type):
         self.input_buffer_empty = []
         self.output_buffer_empty = []
         self.target = None
@@ -118,7 +125,7 @@ class PE_array:
         self.PE_num = PE_num
         self.PE_list = []
         for i in range(self.PE_num):
-            self.PE_list.append(PE())
+            self.PE_list.append(PE(mission_type))
     
     def input(self, input_data, target,instruction):
         for i in range(self.PE_num):
