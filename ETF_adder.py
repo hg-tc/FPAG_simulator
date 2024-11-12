@@ -19,7 +19,6 @@ class ETF:
         self.input_buffer.append(input_data)
         self.instruction_buffer.append(instruction)
         self.reading_mb = True
-        print(self.input_buffer,self.instruction_buffer)
     
     def output(self):
         if self.output_buffer:
@@ -82,12 +81,12 @@ class ETF:
 if __name__ == '__main__':
     cycle_num = 0
     ETF0 = ETF()
-    ETF0.input(3)
-    ETF0.input(2)
-    ETF0.input(3)
+    ETF0.input(3,100)
+    ETF0.input(2,101)
+    ETF0.input(1,102)
 
     for i in range(80):
         ETF0.step(1)
-        print(cycle_num, ETF0.output(1))
-        # print(ETF0.process_target_buffer)
+        print(cycle_num, ETF0.output())
+        print(ETF0.input_buffer,ETF0.instruction_buffer,ETF0.output_buffer)
         cycle_num = cycle_num + 1

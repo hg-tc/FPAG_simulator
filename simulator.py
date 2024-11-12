@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 import matplotlib as mpl
 
-mission_type = 3
+mission_type = 1
 
 if __name__ == '__main__':
     # param
@@ -37,6 +37,14 @@ if __name__ == '__main__':
 
     instruction_set = []
     file_path = 'Inst_012085.txt'
+    if(mission_type==1):
+        file_path = 'Inst_mono.txt'
+    elif(mission_type==2):
+        file_path = 'Inst_fusion.txt'
+    elif(mission_type==3):
+        file_path = 'Inst_sfm2.txt'
+    elif(mission_type==4):
+        file_path = 'Inst_sfm3.txt'
     with open(file_path,'r') as file:
         instruction = file.readline()
         counts = 0
@@ -159,7 +167,7 @@ if __name__ == '__main__':
 
     Jacobian_comp = 0
     # executing
-    print("num ", LOAD_num, ETE_num)
+    print("num ", LOAD_num, ETE_num, inst_num)
     processed = []
     for i in range(len(instruction_set2)):
         processed.append(False)
@@ -169,7 +177,6 @@ if __name__ == '__main__':
 
     GTG_num = 0
     while(1) :
-        # break
         if(inst_ptr is not None):
             instruction_now = instruction_set2[inst_ptr]
         else:
@@ -287,7 +294,10 @@ if __name__ == '__main__':
                 print('===============Element_nulti================')
                 pass
             elif instruction_now[0] == 4:
-                G_reader0.input(3)
+                if(mission_type==1 or mission_type==2):
+                    G_reader0.input(1)
+                if(mission_type==3 or mission_type==4):
+                    G_reader0.input(3)
                 GTG_controller.input(0,instruction_now[1], None)
                 instruction_valid = 1
                 print('===============GTG================')
@@ -348,11 +358,14 @@ if __name__ == '__main__':
 
 
         GTG_ready = 0
-        if(read_out[1]==1):
-            GTG_num += 1
-        if(GTG_num >=3):
-            GTG_num-=3
-            GTG_ready = 1
+        if(mission_type==1 or mission_type==2):
+            if(read_out[1]==1):
+                GTG_num += 1
+            if(GTG_num >=3):
+                GTG_num-=3
+                GTG_ready = 1
+        if(mission_type==3 or mission_type==4):
+            GTG_ready = (read_out[1]==1)
         GTG_controller.input(GTG_ready, None, None)
         GTG_now = GTG_controller.step(1)
 
@@ -390,7 +403,6 @@ if __name__ == '__main__':
         GTG_array0.output([1,1,1,1,1,1])
         PE_write_mb = [0,0,0,0,0,0]
         PE_write_fb = [0,0,0,0,0,0]
-        print("PE_state ", PE_array0.target, PE_array0.PE_list[0].process_target_buffer, PE_array0.PE_list[0].output_buffer)
         for i in range(PE_num):
             if PE_array0.target[i] == 2:
                 FTF_mvalid += 1
@@ -422,7 +434,7 @@ if __name__ == '__main__':
             if(PE_Done_list[i]):
                 # print("jump_to: ", PE_Done_list[i])
                 waiting_buffer.append(PE_Done_list[i])
-                # if(PE_Done_list[i]==1898):
+                # if(PE_Done_list[i]==8040):
                 #     count936 += 1
         # print("PE ", PE_Done_list, [x or y for x,y in zip(mb_write_valid[:-1],PE_write_fb)])
         # if count936==1:
@@ -430,6 +442,9 @@ if __name__ == '__main__':
         #     break
 
         _ , ADD_Done = ETF0.output()
+
+        print("ETF ", ETF0.input_buffer, ETF0.instruction_buffer, ETF0.output_buffer)
+
         if(ADD_Done):
             waiting_buffer.append(ADD_Done)
 
@@ -482,6 +497,9 @@ if __name__ == '__main__':
             elif(waiting_buffer):
                 print('exec waiting')
                 inst_ptr = waiting_buffer.pop(0)
+                # if(inst_ptr==8040):
+                #     print("jump")
+                #     break
             elif(next_ptr_buffer):
                 print('exec next')
                 inst_ptr = next_ptr_buffer.pop(0)
@@ -505,6 +523,17 @@ if __name__ == '__main__':
 
         # print(PE_array0.output_buffer_empty,ETF0.output_buffer_empty,FTF0.Done)
         all_excited = all(k==True for k in processed)
+
+        print("all_excited ",all_excited)
+        print("buffer ", waiting_buffer, next_ptr_buffer, necessery_ptr_buffer, inst_ptr)
+        print("Done ", PE_array0.output_buffer_empty, ETF0.output_buffer_empty, FTF0.Done, ETE0.Done)
+
+        # if(count > 14000):
+        #     for i in range(len(instruction_set2)):
+        #         if(processed[i]==False and i < 8100):
+        #             print("error", i)
+        # for i in range(-10,10):
+        #         print(instruction_set2[8041+i],8041+i)
 
         if(not waiting_buffer and not next_ptr_buffer and not necessery_ptr_buffer and inst_ptr is None and PE_array0.output_buffer_empty and ETF0.output_buffer_empty and FTF0.Done and ETE0.Done):
             # for i in range(len(instruction_set2)):
