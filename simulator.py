@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 import matplotlib as mpl
 
-mission_type = 1
+mission_type = 2
 
 if __name__ == '__main__':
     # param
@@ -59,11 +59,12 @@ if __name__ == '__main__':
     # generate small instruction
     instruction_set2 = []
     LOAD_num = 0
-    ETE_num = 0
+    ADD_num = 0
+    multi_num = 0
+    GTG_num = 0
     while instruction_set:
         instruction_now = instruction_set.pop(0)
         if instruction_now[0:4] == '0001':
-            LOAD_num += 1
             pi = int(instruction_now[4:8],2)
             rbs = int(instruction_now[8:17],2)
             mbd = int(instruction_now[17:26],2)
@@ -75,6 +76,7 @@ if __name__ == '__main__':
                     inst_last = int(instruction_now[31])
                     last = int(instruction_now[30])
                 instruction_set2.append([1,pi,rbs+i,mbd+i*6,last,inst_last])
+                LOAD_num += 1
             # print('===============Load================')
             pass
         elif instruction_now[0:4] == '0010':
@@ -87,17 +89,19 @@ if __name__ == '__main__':
                     add_num += 1
                     # print(code, 'plus')
             instruction_set2.append([2,last,add_num])
+            ADD_num += 1
             # print('===============Add================')
             pass
         elif instruction_now[0:4] == '0011':
-            ETE_num += 1
             pi = int(instruction_now[4:8],2)
             length = int(instruction_now[8:],2)
             for i in range(length):
                 if(i == length-1):
                     instruction_set2.append([3,pi,1])
+                    multi_num += 1
                 else:
                     instruction_set2.append([3,pi,0])
+                    multi_num += 1
                 # print('===============Element_nulti================')
             pass
         elif instruction_now[0:4] == '0100':
@@ -107,8 +111,10 @@ if __name__ == '__main__':
             for i in range(length):
                 if(i == length-1):
                     instruction_set2.append([4,pi,1])
+                    GTG_num += 1
                 else:
                     instruction_set2.append([4,pi,0])
+                    GTG_num += 1
                 # print('===============GTG================')
             pass
         elif instruction_now[0:4] == '0101':
@@ -136,11 +142,13 @@ if __name__ == '__main__':
     next_ptr_buffer = []
     necessery_ptr_buffer = []
 
+    instruction_processing = np.zeros(4)
     PE_in_workload = np.zeros(PE_num)
     PE_out_workload = np.zeros(PE_num)
     GTG_in_workload = np.zeros(PE_num)
     GTG_out_workload = np.zeros(PE_num)
 
+    instruction_processing.reshape(4,1)
     PE_in_workload.reshape(PE_num,1)
     PE_out_workload.reshape(PE_num,1)
     GTG_in_workload.reshape(PE_num,1)
@@ -167,7 +175,7 @@ if __name__ == '__main__':
 
     Jacobian_comp = 0
     # executing
-    print("num ", LOAD_num, ETE_num, inst_num)
+    print("num ", LOAD_num, ADD_num, multi_num, GTG_num, inst_num)
     processed = []
     for i in range(len(instruction_set2)):
         processed.append(False)
@@ -175,8 +183,13 @@ if __name__ == '__main__':
     pre_inst_ptr = 0
     count936 = 0
 
-    GTG_num = 0
+    GTG_read_num = 0
+    processed_Load = 0
+    processed_ADD = 0
+    processed_multi = 0
+    processed_GTG = 0
     while(1) :
+        break
         if(inst_ptr is not None):
             instruction_now = instruction_set2[inst_ptr]
         else:
@@ -288,7 +301,6 @@ if __name__ == '__main__':
                     jump = inst_ptr+1
                 element_reader.input(1)
                 element_multi.input(0,instruction_now[1],jump)
-                if(jump != None): ETE_num += 1
                 instruction_valid = 1
                 # print("ETE_INST_BUFF",element_multi.instruction_buffer)
                 print('===============Element_nulti================')
@@ -360,16 +372,16 @@ if __name__ == '__main__':
         GTG_ready = 0
         if(mission_type==1 or mission_type==2):
             if(read_out[1]==1):
-                GTG_num += 1
-            if(GTG_num >=3):
-                GTG_num-=3
+                GTG_read_num += 1
+            if(GTG_read_num >=3):
+                GTG_read_num-=3
                 GTG_ready = 1
         if(mission_type==3 or mission_type==4):
             GTG_ready = (read_out[1]==1)
         GTG_controller.input(GTG_ready, None, None)
         GTG_now = GTG_controller.step(1)
 
-        print("GTG", GTG_now, GTG_num, GTG_ready)
+        print("GTG", GTG_now, GTG_read_num, GTG_ready)
 
         if(GTG_now):
             GTG_new = 1
@@ -491,6 +503,15 @@ if __name__ == '__main__':
                         print(instruction_set2[inst_ptr+i],inst_ptr+i)
                     print("error")
                     break
+                if(instruction_now[0] == 1):
+                    processed_Load += 1
+                elif(instruction_now[0] == 2):
+                    processed_ADD += 1
+                elif(instruction_now[0] == 3):
+                    processed_multi += 1
+                elif(instruction_now[0] == 4):
+                    processed_GTG += 1
+
             if(necessery_ptr_buffer):
                 print('exec necessery')
                 inst_ptr = necessery_ptr_buffer.pop(0)
@@ -511,11 +532,11 @@ if __name__ == '__main__':
         if(mission_type==3 or mission_type==4):
             print("pinv",ETE0.input_buffer,ETE0.process_buffer,ETE0.Done)
             print("controller ", element_multi.pi_buffer, element_multi.instruction_buffer)
-            print("num ", LOAD_num, ETE_num)
+
         else:
             print("pinv",ETE0.input_buffer,ETE0.output_buffer,ETE0.process_target_buffer,ETE0.Done)
             print("controller ", element_multi.pi_buffer, element_multi.instruction_buffer)
-            print("num ", LOAD_num, ETE_num)
+
         
         # for i in range(len(instruction_set2)):
         #     if(processed[i]==False):
@@ -546,6 +567,8 @@ if __name__ == '__main__':
             break
         
         count+=1
+        instruction_processing = np.c_[instruction_processing, [processed_Load,processed_ADD,processed_multi,processed_GTG]]
+
         PE_in_work,PE_out_work = PE_array0.state()
         GTG_in_work,GTG_out_work = GTG_array0.state()
 
@@ -624,5 +647,17 @@ if __name__ == '__main__':
     #     y = GTG_in_state[i]
     #     ax.plot(x,y)
     # ax.set_title('GTG_in_state')
+
+    fig, ax = plt.subplots()
+    for i in range(4):
+        label = None
+        if(i==0): label='Load'
+        elif(i==1): label='ADD'
+        elif(i==2): label='multi'
+        else: label='GTG'
+        y = instruction_processing[i]
+        ax.plot(x,y, label=label)
+    ax.legend()
+    ax.set_title('instruction_processing')
 
     plt.show()
