@@ -12,7 +12,7 @@ import matplotlib as mpl
 
 
 
-def simulator(mission_type_in, PE_num_in):
+def simulator(mission_type_in, PE_num_in, show):
     mission_type = mission_type_in
     # param
     input_data_range = 10000
@@ -37,15 +37,15 @@ def simulator(mission_type_in, PE_num_in):
     wbm = bram(2)
 
     instruction_set = []
-    file_path = 'Inst_012085.txt'
+    file_path = 'data/Inst_012085.txt'
     if(mission_type==1):
-        file_path = 'Inst_mono.txt'
+        file_path = 'data/Inst_mono.txt'
     elif(mission_type==2):
-        file_path = 'Inst_fusion.txt'
+        file_path = 'data/Inst_fusion.txt'
     elif(mission_type==3):
-        file_path = 'Inst_sfm2.txt'
+        file_path = 'data/Inst_sfm2.txt'
     elif(mission_type==4):
-        file_path = 'Inst_sfm3.txt'
+        file_path = 'data/Inst_sfm3.txt'
     with open(file_path,'r') as file:
         instruction = file.readline()
         counts = 0
@@ -787,18 +787,20 @@ def simulator(mission_type_in, PE_num_in):
     print(x.size, len(y))
     ax.scatter(x,y,c='b',s=1)
     ax.set_title('GTG_pi')
-    plt.show()
+    if show:
+        plt.show()
 
     return count, load_num, PE_in_workload, GTG_in_workload, FTF_workload, instruction_processing, ETE_add_workload, Instruction_process_list, GTG_pi
 
 
 import os
 
-if __name__ == '__main__':
-    mission_type = 1
-    PE_num = 6
+def run_sim_and_save(mission_type_in, PE_num_in, show_in):
+    mission_type = mission_type_in
+    PE_num = PE_num_in
+    show = show_in
     info = str(mission_type)+"_"+str(PE_num)
-    count, load_num, PE_in_workload, GTG_in_workload, FTF_workload, instruction_processing, ETE_add_workload, Instruction_process_list, GTG_pi = simulator(mission_type, PE_num)
+    count, load_num, PE_in_workload, GTG_in_workload, FTF_workload, instruction_processing, ETE_add_workload, Instruction_process_list, GTG_pi = simulator(mission_type, PE_num, show)
     os.chdir(r'./log/')
     np.save('base_'+info, np.array([count,load_num]))
     np.save('PE_in_workload_'+info, PE_in_workload)
@@ -809,5 +811,19 @@ if __name__ == '__main__':
     np.save('Instruction_process_list_'+info, Instruction_process_list)
     np.save('GTG_pi_'+info, GTG_pi)
     
-    
+import sys
+
+if __name__ == '__main__':
+    mission_type = 1
+    PE_num = 6
+    show = 1
+
+    if(len(sys.argv)==4):
+        mission_type = int(sys.argv[1])
+        PE_num = int(sys.argv[2])
+        show  = int(sys.argv[3])
+    # print(mission_type)
+        run_sim_and_save(mission_type, PE_num, show)
+    else:
+        print("no parameter")
     # plt.show()
