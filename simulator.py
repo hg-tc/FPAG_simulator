@@ -10,14 +10,15 @@ import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 import matplotlib as mpl
 
-mission_type = 1
 
-if __name__ == '__main__':
+
+def simulator(mission_type_in, PE_num_in):
+    mission_type = mission_type_in
     # param
     input_data_range = 10000
     readdata_speed = 256
 
-    PE_num = 6
+    PE_num = PE_num_in
     PE_array0 = PE_array(PE_num, mission_type)
     GTG_array0 = PE_array(PE_num, mission_type)
     GTG_controller = controller()
@@ -472,10 +473,10 @@ if __name__ == '__main__':
             pi, _ = GTG_controller.output()
             mission_list[pi] = 1 * 6#VINS
             target_list[pi] = 2 #VINS
-            if(mission_type == 1 or mission_type == 2):
+            if(0):
                 GTG_array0.input(mission_list,target_list,GTG_inst_list)
                 GTG_IN = mission_list
-            elif(mission_type == 3 or mission_type==4):
+            elif(mission_type == 3 or mission_type==4 or mission_type==1 or mission_type==2):
                 PE_array0.input(mission_list,target_list,GTG_inst_list)
 
 
@@ -484,9 +485,15 @@ if __name__ == '__main__':
         ETE_add = 0
         PE_array0.step()
         GTG_array0.step()
-        GTG_array0.output([1,1,1,1,1,1])
-        PE_write_mb = [0,0,0,0,0,0]
-        PE_write_fb = [0,0,0,0,0,0]
+        GTG_output = []
+        PE_write_mb = []
+        PE_write_fb = []
+        for i in range(PE_num):
+            GTG_output.append(1)
+            PE_write_mb.append(0)
+            PE_write_fb.append(0)
+        GTG_array0.output(GTG_output)
+        
         for i in range(PE_num):
             if PE_array0.target[i] == 2:
                 FTF_mvalid += 1
@@ -650,13 +657,13 @@ if __name__ == '__main__':
         #     for i in range(len(instruction_set2)):
         #         if(processed[i]==False):
         #             print("error", i)
-        for i in range(-10,10):
-                print(instruction_set2[372+i],372+i)
+        # for i in range(-10,10):
+        #         print(instruction_set2[372+i],372+i)
 
         if(not waiting_buffer and not next_ptr_buffer and not necessery_ptr_buffer and inst_ptr is None and PE_array0.Done and GTG_array0.Done and ETF0.output_buffer_empty and FTF0.Done and ETE0.Done and all_excited):
-            for i in range(len(instruction_set2)):
-                if(processed[i]==False and i < 21):
-                    print("error", i)
+            # for i in range(len(instruction_set2)):
+            #     if(processed[i]==False and i < 21):
+            #         print("error", i)
             # for i in range(-10,10):
             #     print(instruction_set2[20+i],20+i)
             print(count)
@@ -780,5 +787,27 @@ if __name__ == '__main__':
     print(x.size, len(y))
     ax.scatter(x,y,c='b',s=1)
     ax.set_title('GTG_pi')
-
     plt.show()
+
+    return count, load_num, PE_in_workload, GTG_in_workload, FTF_workload, instruction_processing, ETE_add_workload, Instruction_process_list, GTG_pi
+
+
+import os
+
+if __name__ == '__main__':
+    mission_type = 1
+    PE_num = 6
+    info = str(mission_type)+"_"+str(PE_num)
+    count, load_num, PE_in_workload, GTG_in_workload, FTF_workload, instruction_processing, ETE_add_workload, Instruction_process_list, GTG_pi = simulator(mission_type, PE_num)
+    os.chdir(r'./log/')
+    np.save('base_'+info, np.array([count,load_num]))
+    np.save('PE_in_workload_'+info, PE_in_workload)
+    np.save('GTG_in_workload_'+info, GTG_in_workload)
+    np.save('FTF_workload_'+info, FTF_workload)
+    np.save('instruction_processing_'+info, instruction_processing)
+    np.save('ETE_add_workload_'+info, ETE_add_workload)
+    np.save('Instruction_process_list_'+info, Instruction_process_list)
+    np.save('GTG_pi_'+info, GTG_pi)
+    
+    
+    # plt.show()
