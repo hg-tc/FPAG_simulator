@@ -129,7 +129,7 @@ if __name__ == '__main__':
             pass
         
 
-    rbram_data_length = 0
+    rbram_data_length = 2048
     inst_read = 0
     inst_write = 0
     print(instruction_set2)
@@ -165,9 +165,21 @@ if __name__ == '__main__':
     GTG_in_state = np.zeros(PE_num)
     GTG_in_state.reshape(PE_num,1)
 
-    LOAD_IN = [None,None,None,None,None,None]
-    ELE_IN = [None,None,None,None,None,None]
-    GTG_IN = [0,0,0,0,0,0]
+    ETE_add_workload = [0]
+    Instruction_process_list = []
+    Instruction_group = []
+    GTG_pi = []
+    changing_pi = 0
+    changing_pi2 = 0
+
+    # LOAD_IN = []
+    ELE_IN = []
+    GTG_IN = []
+
+    for i in range(PE_num):
+        # LOAD_IN.append(None)
+        ELE_IN.append(None)
+        GTG_IN.append(0)
 
 
     data = []
@@ -201,8 +213,8 @@ if __name__ == '__main__':
         # if(inst_ptr==1903):
         #     break
 
-        if(count%297 < 33 and count >200):
-            rbram_data_length += 2*1024
+        # if(count%297 < 33 and count >200):
+        #     rbram_data_length += 2*1024
         # rbram_data_length += 256
 
         instruction_valid = 0
@@ -214,57 +226,87 @@ if __name__ == '__main__':
                     jump = inst_ptr+1
                 if(rbram_data_length > 1024):
                     load_num+=1
-                    rbram_data_length  = rbram_data_length - 1024
+                    rbram_data_length  = rbram_data_length 
                     pi = instruction_now[1]
                     mission_list = []
                     target_list = []
                     ETE_inst_list = []
                     for i in range(PE_num):
-                        dis = (i-pi)%6
-                        if(mission_type==1 or mission_type==2 or mission_type==4):
-                            if(i==pi or dis==1):
-                                if(mission_type==1 or mission_type==2):
-                                    mission_list.append(1)
-                                else:
-                                    mission_list.append(3)
-                            elif(dis==2 or dis==3 or dis==4):
-                                mission_list.append(6)
-                            else:
-                                mission_list.append(0)
+                        dis = (i-pi)%PE_num
+                        if(mission_type==1 or mission_type==2):
+                            # if(i==pi or dis==1):
+                            #     if(mission_type==1 or mission_type==2):
+                            #         mission_list.append(1)
+                            #     else:
+                            #         mission_list.append(3)
+                            # elif(dis==2 or dis==3 or dis==4):
+                            #     mission_list.append(6)
+                            # else:
+                            #     mission_list.append(0)
 
-                            if(i==pi or dis==1):
-                                target_list.append(1)
-                            elif(dis==2 or dis==3 or dis==4):
-                                target_list.append(2)
-                            else:
-                                target_list.append(0)
-                            
+                            # if(i==pi or dis==1):
+                            #     target_list.append(1)
+                            # elif(dis==2 or dis==3 or dis==4):
+                            #     target_list.append(2)
+                            # else:
+                            #     target_list.append(0)
                             if(i==pi):
-                                ETE_inst_list.append(jump)
+                                mission_list.append([1,1,6,6,6])
+                                target_list.append([1,1,2,2,2])
                             else:
-                                ETE_inst_list.append(None)
+                                mission_list.append([0,0,0,0,0])
+                                target_list.append([0,0,0,0,0])      
+                            if(i==pi):
+                                ETE_inst_list.append([jump,None,None,None,None])
+                            else:
+                                ETE_inst_list.append([None,None,None,None,None])
                         elif(mission_type==3):
-                            if(i==pi):
-                                mission_list.append(3)
-                            elif(dis==1):
-                                mission_list.append(3)
-                            else:
-                                mission_list.append(0)
+                            # if(i==pi):
+                            #     mission_list.append(3)
+                            # elif(dis==1):
+                            #     mission_list.append(3)
+                            # else:
+                            #     mission_list.append(0)
+
+                            # if(i==pi):
+                            #     target_list.append(1)
+                            # elif(dis==1):
+                            #     target_list.append(2)
+                            # else:
+                            #     target_list.append(0)
 
                             if(i==pi):
-                                target_list.append(1)
-                            elif(dis==1):
-                                target_list.append(2)
+                                mission_list.append([3,3])
+                                target_list.append([1,2])
                             else:
-                                target_list.append(0)
-                            
+                                mission_list.append([0,0])
+                                target_list.append([0,0])
+
                             if(i==pi):
-                                ETE_inst_list.append(jump)
+                                ETE_inst_list.append([jump,None])
                             else:
-                                ETE_inst_list.append(None)
-                    PE_array0.input(mission_list,target_list,ETE_inst_list)
+                                ETE_inst_list.append([None,None])
+                                
+                        elif(mission_type==4):
+                            if(i==pi):
+                                mission_list.append([3,3,6,6,6])
+                                target_list.append([1,1,2,2,2])
+                            else:
+                                mission_list.append([0,0,0,0,0])
+                                target_list.append([0,0,0,0,0])
+
+                            if(i==pi):
+                                ETE_inst_list.append([jump,None,None,None,None])
+                            else:
+                                ETE_inst_list.append([None,None,None,None,None])
+                    mission_list = np.array(mission_list).T
+                    target_list = np.array(target_list).T
+                    ETE_inst_list = np.array(ETE_inst_list).T
+                    # print(mission_list)
+                    for i in range(mission_list.shape[0]):
+                        PE_array0.input(mission_list[i],target_list[i],ETE_inst_list[i])
                     # print("PE_INPUT: ",mission_list,target_list,ETE_inst_list)
-                    LOAD_IN = mission_list
+                    # LOAD_IN = mission_list
                     # PE_array0.input([1,1,6,6,6,0],[1,1,2,2,2,0],[jump,None,None,None,None,None])
                     if(mission_type == 1 or mission_type == 2):
                         ETE0.input(1, instruction_now[4])
@@ -298,37 +340,43 @@ if __name__ == '__main__':
                 print('===============Add================')
                 pass
             elif instruction_now[0] == 3:
-                while 1:
-                    pallel_num += 1
-                    jump = None
-                    if(instruction_now[2]==1):
-                        jump = inst_ptr+1
-                    element_reader.input(1)
-                    element_multi.input(0,instruction_now[1],jump)
-                    instruction_valid = 1
-                    if(inst_ptr+1<len(instruction_set2) and instruction_set2[inst_ptr+1][0]==3):
-                        inst_ptr += 1
-                        instruction_now = instruction_set2[inst_ptr]
-                    else:
-                        break
+                # while 1:
+                pallel_num += 1
+                jump = None
+                if(instruction_now[2]==1):
+                    jump = inst_ptr+1
+                element_reader.input(1)
+                element_multi.input(0,instruction_now[1],jump)
+                # element_multi.input(0,changing_pi2,jump)
+                # changing_pi2 = (changing_pi2 + 1)%6
+                instruction_valid = 1
+                    # Instruction_group.append(inst_ptr)
+                    # if(inst_ptr+1<len(instruction_set2) and instruction_set2[inst_ptr+1][0]==3):
+                    #     inst_ptr += 1
+                    #     instruction_now = instruction_set2[inst_ptr]
+                    # else:
+                        # break
 
                 # print("ETE_INST_BUFF",element_multi.instruction_buffer)
                 print('===============Element_nulti================')
                 pass
             elif instruction_now[0] == 4:
-                while 1:
-                    pallel_num += 1
-                    if(mission_type==1 or mission_type==2):
-                        G_reader0.input(1)
-                    if(mission_type==3 or mission_type==4):
-                        G_reader0.input(3)
-                    GTG_controller.input(0,instruction_now[1], None)
-                    instruction_valid = 1
-                    if(inst_ptr+1<len(instruction_set2) and instruction_set2[inst_ptr+1][0]==4):
-                        inst_ptr += 1
-                        instruction_now = instruction_set2[inst_ptr]
-                    else:
-                        break
+                # while 1:
+                pallel_num += 1
+                if(mission_type==1 or mission_type==2):
+                    G_reader0.input(1)
+                if(mission_type==3 or mission_type==4):
+                    G_reader0.input(1)
+                GTG_controller.input(0,instruction_now[1], None)
+                # GTG_controller.input(0,changing_pi, None)
+                # changing_pi = (changing_pi + 1)%6
+                instruction_valid = 1
+                    # Instruction_group.append(inst_ptr)
+                    # if(inst_ptr+1<len(instruction_set2) and instruction_set2[inst_ptr+1][0]==4):
+                    #     inst_ptr += 1
+                    #     instruction_now = instruction_set2[inst_ptr]
+                    # else:
+                    #     break
                 print('===============GTG================')
 
             elif instruction_now[0] == 5:
@@ -347,6 +395,12 @@ if __name__ == '__main__':
         else:
             instruction_valid = 1
             print('===============processing================')
+
+        if(instruction_now and instruction_now[0]==4):
+            GTG_pi.append(instruction_now[1])
+        else:
+            GTG_pi.append(-1)
+
 
         mb_read_request = [element_reader.reading_mb,G_reader0.reading_mb,ETF0.reading_mb]
         read_valid,_,read_out = mbm.step(mb_read_request,[])
@@ -387,13 +441,13 @@ if __name__ == '__main__':
 
 
         GTG_ready = 0
-        if(mission_type==3 or mission_type==4):
-            if(read_out[1]==1):
-                GTG_read_num += 1
-            if(GTG_read_num >=3):
-                GTG_read_num-=3
-                GTG_ready = 1
-        if(mission_type==1 or mission_type==2):
+        # if(mission_type==3 or mission_type==4):
+        #     if(read_out[1]==1):
+        #         GTG_read_num += 1
+        #     if(GTG_read_num >=3):
+        #         GTG_read_num-=3
+        #         GTG_ready = 1
+        if(mission_type==1 or mission_type==2 or mission_type==3 or mission_type==4):
             GTG_ready = read_out[1]
 
         GTG_controller.input(GTG_ready, None, None)
@@ -513,15 +567,31 @@ if __name__ == '__main__':
         # print("buffer_show",necessery_ptr_buffer,waiting_buffer,next_ptr_buffer)
 
         if(instruction_valid == 1):
-            if(inst_ptr != None):
-                if(processed[inst_ptr]==False):
-                    processed[inst_ptr] = True
-                elif(processed[inst_ptr]==True):
-                    print(instruction_now, inst_ptr, pre_inst_ptr)
-                    for i in range(-10,10):
-                        print(instruction_set2[inst_ptr+i],inst_ptr+i)
-                    print("error")
-                    break
+
+            if(inst_ptr != None or Instruction_group):
+                print(inst_ptr, Instruction_group)
+                Instruction_process_list.append(instruction_now[0])
+                if(Instruction_group):
+                    for i in range(len(Instruction_group)):
+                        if(processed[i]==False):
+                            processed[i] = True
+                        elif(processed[inst_ptr]==True):
+                            print(instruction_now, inst_ptr, pre_inst_ptr)
+                            for i in range(-10,10):
+                                print(instruction_set2[inst_ptr+i],inst_ptr+i)
+                            print("error")
+                            break
+                elif(inst_ptr != None):
+                    if(processed[inst_ptr]==False):
+                        processed[inst_ptr] = True
+                        # print(inst_ptr,"--------------------------right--------------------")
+                    elif(processed[inst_ptr]==True):
+                        print(instruction_now, inst_ptr, pre_inst_ptr)
+                        for i in range(-10,10):
+                            print(instruction_set2[inst_ptr+i],inst_ptr+i)
+                        print("error")
+                        break
+
                 if(instruction_now[0] == 1):
                     processed_Load += 1
                 elif(instruction_now[0] == 2):
@@ -530,6 +600,8 @@ if __name__ == '__main__':
                     processed_multi += pallel_num
                 elif(instruction_now[0] == 4):
                     processed_GTG += pallel_num
+            else:
+                Instruction_process_list.append(0)
 
             if(necessery_ptr_buffer):
                 print('exec necessery')
@@ -546,8 +618,11 @@ if __name__ == '__main__':
             else:
                 inst_ptr = None
             pre_inst_ptr = inst_ptr
+        else:
+            Instruction_process_list.append(0)
 
         pallel_num = 0
+        Instruction_group = []
         print("FTF",FTF0.Done,FTF0.input_buffer,FTF0.mb_data_num,FTF0.fb_data_num,FTF0.output_buffer,FTF0.process_target_buffer)
         if(mission_type==3 or mission_type==4):
             print("pinv",ETE0.input_buffer,ETE0.process_buffer,ETE0.Done)
@@ -559,8 +634,10 @@ if __name__ == '__main__':
 
         
         # for i in range(len(instruction_set2)):
-        #     if(processed[i]==False):
+        #     if(processed[i]==False and i < 21):
         #         print(i)
+        # for i in range(-10,10):
+        #         print(instruction_set2[10+i],10+i)
 
         # print(PE_array0.output_buffer_empty,ETF0.output_buffer_empty,FTF0.Done)
         all_excited = all(k==True for k in processed)
@@ -571,19 +648,19 @@ if __name__ == '__main__':
 
         # if(count > 14000):
         #     for i in range(len(instruction_set2)):
-        #         if(processed[i]==False and i < 8100):
+        #         if(processed[i]==False):
         #             print("error", i)
-        # for i in range(-10,10):
-        #         print(instruction_set2[8041+i],8041+i)
+        for i in range(-10,10):
+                print(instruction_set2[372+i],372+i)
 
-        if(not waiting_buffer and not next_ptr_buffer and not necessery_ptr_buffer and inst_ptr is None and PE_array0.output_buffer_empty and ETF0.output_buffer_empty and FTF0.Done and ETE0.Done):
-            # for i in range(len(instruction_set2)):
-            #     if(processed[i]==False and i < 2000):
-            #         print("error", i)
+        if(not waiting_buffer and not next_ptr_buffer and not necessery_ptr_buffer and inst_ptr is None and PE_array0.Done and GTG_array0.Done and ETF0.output_buffer_empty and FTF0.Done and ETE0.Done and all_excited):
+            for i in range(len(instruction_set2)):
+                if(processed[i]==False and i < 21):
+                    print("error", i)
             # for i in range(-10,10):
-            #     print(instruction_set2[1904+i],1904+i)
+            #     print(instruction_set2[20+i],20+i)
             print(count)
-            print(load_num)
+            print("load_num ", load_num)
             break
         
         count+=1
@@ -600,16 +677,24 @@ if __name__ == '__main__':
         FTF_work = [FTF0.input_buffer,FTF0.mb_data_num,FTF0.fb_data_num]
         FTF_workload = np.c_[FTF_workload,FTF_work]
 
-        PE_load_in_state = np.c_[PE_load_in_state, LOAD_IN]
+        # PE_load_in_state = np.c_[PE_load_in_state, LOAD_IN]
+        
         PE_ele_in_state = np.c_[PE_ele_in_state, ELE_IN]
 
         GTG_in_state = np.c_[GTG_in_state, GTG_IN]
 
+        ETE_add_workload.append(len(ETE0.adder_buffer))
+
         FTF0.output(6)
 
-        LOAD_IN = [None,None,None,None,None,None]
-        ELE_IN = [None,None,None,None,None,None]
-        GTG_IN = [0,0,0,0,0,0]
+        # LOAD_IN = []
+        ELE_IN = []
+        GTG_IN = []
+
+        for i in range(PE_num):
+            # LOAD_IN.append(None)
+            ELE_IN.append(None)
+            GTG_IN.append(0)
         # print(FTF0.input_buffer,FTF0.mb_data_num,FTF0.fb_data_num,FTF0.reading_mb )
     x = np.linspace(0, count+1, count+1)
     y=[]
@@ -679,5 +764,21 @@ if __name__ == '__main__':
         ax.plot(x,y, label=label)
     ax.legend()
     ax.set_title('instruction_processing')
+
+    fig, ax = plt.subplots()
+    y = ETE_add_workload
+    ax.plot(x,y)
+    ax.set_title('ETE_add_workload')
+
+    fig, ax = plt.subplots()
+    y = Instruction_process_list
+    ax.scatter(x,y,c='r',s=1)
+    ax.set_title('instruction_process_list')
+
+    fig, ax = plt.subplots()
+    y = GTG_pi
+    print(x.size, len(y))
+    ax.scatter(x,y,c='b',s=1)
+    ax.set_title('GTG_pi')
 
     plt.show()

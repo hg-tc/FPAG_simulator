@@ -38,15 +38,16 @@ class FTF:
         
         if(self.mb_data_num > 0 and self.fb_data_num > 0 and self.input_buffer != 0):
             process_num = min(self.input_buffer,self.mb_data_num,self.fb_data_num,6)
+            # process_num = 100
             self.input_buffer -= process_num
             self.mb_data_num -= process_num
             self.fb_data_num -= process_num
-            # if(self.input_buffer < 0):
-            #     self.input_buffer=0
-            # if(self.mb_data_num < 0):
-            #     self.mb_data_num=0
-            # if(self.fb_data_num < 0):
-            #     self.fb_data_num=0
+            if(self.input_buffer < 0):
+                self.input_buffer=0
+            if(self.mb_data_num < 0):
+                self.mb_data_num=0
+            if(self.fb_data_num < 0):
+                self.fb_data_num=0
 
             self.process_target_buffer.append(1)
         else:

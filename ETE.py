@@ -67,7 +67,7 @@ class ETE:
             if self.adder_processing == False:
                 self.adder_num += 1
                 if(self.adder_num>=2):
-                    self.adder_cycle += 11 #adder_cycle
+                    self.adder_cycle += 1 #adder_cycle
             if self.adder_processing == False and self.adder_buffer[0] == 2: 
                 self.adder_processing = True
                 self.adder_buffer.pop(0)

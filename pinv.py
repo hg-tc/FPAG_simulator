@@ -5,6 +5,7 @@ class pinv:
         self.process_buffer = 0
 
         self.output_buffer = []
+        self.adder_buffer = []
 
         self.output_buffer_empty = True
         self.Done = True
@@ -21,7 +22,7 @@ class pinv:
 
     def step(self):
         if self.process_buffer == 0 and self.input_buffer != 0:
-            self.process_buffer = 10
+            self.process_buffer = 10 # process time
             self.input_buffer -= 1
         elif self.process_buffer != 0:
             self.process_buffer -= 1

@@ -19,10 +19,11 @@ class PE:
         self.target = None
 
     def input(self, input_data, target, instruction):
-       self.input_buffer.append(input_data)
-       self.input_target_buffer.append(target)
-       self.input_instruction_buffer.append(instruction)
-       self.input_buffer_empty = False
+        if(input_data):
+            self.input_buffer.append(input_data)
+            self.input_target_buffer.append(target)
+            self.input_instruction_buffer.append(instruction)
+            self.input_buffer_empty = False
     
     def output(self, out_num):
         # print("PE_OUT_NOW: ", out_num, self.output_buffer, self.output_instruction_buffer)
@@ -118,8 +119,9 @@ class PE:
 class PE_array:
 
     def __init__(self, PE_num, mission_type):
-        self.input_buffer_empty = []
-        self.output_buffer_empty = []
+        self.input_buffer_empty = True
+        self.output_buffer_empty = True
+        self.Done = True
         self.target = None
 
         self.PE_num = PE_num
@@ -148,6 +150,7 @@ class PE_array:
         
         self.input_buffer_empty = all(self.PE_list[i].input_buffer_empty for i in range(self.PE_num))
         self.output_buffer_empty = all(self.PE_list[i].output_buffer_empty for i in range(self.PE_num))
+        self.Done = self.input_buffer_empty and self.output_buffer_empty
         self.target = [self.PE_list[i].target for i in range(self.PE_num)]
 
     def state(self):
