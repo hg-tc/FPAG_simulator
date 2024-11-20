@@ -12,7 +12,7 @@ import matplotlib as mpl
 
 
 
-def simulator(mission_type_in, PE_num_in, show):
+def simulator(mission_type_in, PE_num_in,only_back, show):
     mission_type = mission_type_in
     # param
     input_data_range = 10000
@@ -63,13 +63,14 @@ def simulator(mission_type_in, PE_num_in, show):
     ADD_num = 0
     multi_num = 0
     GTG_num = 0
-    while instruction_set:
-        instruction_now = instruction_set.pop(0)
+    ptr = 0
+    while ptr < len(instruction_set):
+        instruction_now = instruction_set[ptr]
         if instruction_now[0:4] == '0001':
             pi = int(instruction_now[4:8],2)
             rbs = int(instruction_now[8:17],2)
-            mbd = int(instruction_now[17:26],2)
-            length = int(instruction_now[26:30],2)
+            mbd = int(instruction_now[8:17],2)
+            length = int(instruction_now[17:30],2)
             last = 0
             inst_last = 0
             for i in range(length):
@@ -128,6 +129,7 @@ def simulator(mission_type_in, PE_num_in, show):
         else:
             # print('===============processing================')
             pass
+        ptr += 1
         
 
     rbram_data_length = 2048
@@ -185,6 +187,9 @@ def simulator(mission_type_in, PE_num_in, show):
 
     data = []
     load_num = 0
+    acc_num = 0
+    ete_num = 0
+    gtg_num = 0
 
     Jacobian_comp = 0
     # executing
@@ -214,8 +219,12 @@ def simulator(mission_type_in, PE_num_in, show):
         # if(inst_ptr==1903):
         #     break
 
-        # if(count%297 < 33 and count >200):
-        #     rbram_data_length += 2*1024
+        n = 24-PE_num*2
+        num_one_time = n*30
+        cycle_one_time = num_one_time * 13 * 12 / n
+        if(not only_back):
+            if(count%cycle_one_time < num_one_time and count >=cycle_one_time):
+                rbram_data_length += 1024
         # rbram_data_length += 256
 
         instruction_valid = 0
@@ -227,7 +236,10 @@ def simulator(mission_type_in, PE_num_in, show):
                     jump = inst_ptr+1
                 if(rbram_data_length > 1024):
                     load_num+=1
-                    rbram_data_length  = rbram_data_length 
+                    if(only_back):
+                        rbram_data_length  = rbram_data_length 
+                    else:
+                        rbram_data_length  -= 1024 
                     pi = instruction_now[1]
                     mission_list = []
                     target_list = []
@@ -333,6 +345,7 @@ def simulator(mission_type_in, PE_num_in, show):
                 print('===============Load================')
                 pass
             elif instruction_now[0] == 2:
+                acc_num += 1
                 jump = None
                 if(instruction_now[1]==1):
                     jump = inst_ptr+1
@@ -341,6 +354,7 @@ def simulator(mission_type_in, PE_num_in, show):
                 print('===============Add================')
                 pass
             elif instruction_now[0] == 3:
+                ete_num += 1
                 # while 1:
                 pallel_num += 1
                 jump = None
@@ -362,6 +376,7 @@ def simulator(mission_type_in, PE_num_in, show):
                 print('===============Element_nulti================')
                 pass
             elif instruction_now[0] == 4:
+                gtg_num += 1
                 # while 1:
                 pallel_num += 1
                 if(mission_type==1 or mission_type==2):
@@ -653,12 +668,12 @@ def simulator(mission_type_in, PE_num_in, show):
         print("buffer ", waiting_buffer, next_ptr_buffer, necessery_ptr_buffer, inst_ptr)
         print("Done ", PE_array0.output_buffer_empty, ETF0.output_buffer_empty, FTF0.Done, ETE0.Done)
 
-        # if(count > 14000):
-        #     for i in range(len(instruction_set2)):
-        #         if(processed[i]==False):
-        #             print("error", i)
+        if(count > 200000):
+            for i in range(len(instruction_set2)):
+                if(processed[i]==False and i < 50000):
+                    print("error", i)
         # for i in range(-10,10):
-        #         print(instruction_set2[372+i],372+i)
+        #         print(instruction_set2[2900+i],2900+i)
 
         if(not waiting_buffer and not next_ptr_buffer and not necessery_ptr_buffer and inst_ptr is None and PE_array0.Done and GTG_array0.Done and ETF0.output_buffer_empty and FTF0.Done and ETE0.Done and all_excited):
             # for i in range(len(instruction_set2)):
@@ -667,7 +682,7 @@ def simulator(mission_type_in, PE_num_in, show):
             # for i in range(-10,10):
             #     print(instruction_set2[20+i],20+i)
             print(count)
-            print("load_num ", load_num)
+            print("load_num ", load_num, acc_num, ete_num, gtg_num)
             break
         
         count+=1
@@ -790,19 +805,20 @@ def simulator(mission_type_in, PE_num_in, show):
     if show:
         plt.show()
 
-    return count, load_num, PE_in_workload, GTG_in_workload, FTF_workload, instruction_processing, ETE_add_workload, Instruction_process_list, GTG_pi
+    return [count, load_num, acc_num, ete_num, gtg_num], PE_in_workload, GTG_in_workload, FTF_workload, instruction_processing, ETE_add_workload, Instruction_process_list, GTG_pi
 
 
 import os
 
-def run_sim_and_save(mission_type_in, PE_num_in, show_in):
+def run_sim_and_save(mission_type_in, PE_num_in, only_back_in, show_in):
     mission_type = mission_type_in
     PE_num = PE_num_in
+    only_back = only_back_in
     show = show_in
-    info = str(mission_type)+"_"+str(PE_num)
-    count, load_num, PE_in_workload, GTG_in_workload, FTF_workload, instruction_processing, ETE_add_workload, Instruction_process_list, GTG_pi = simulator(mission_type, PE_num, show)
+    info = str(mission_type)+"_"+str(PE_num)+"_"+str(only_back)
+    count, PE_in_workload, GTG_in_workload, FTF_workload, instruction_processing, ETE_add_workload, Instruction_process_list, GTG_pi = simulator(mission_type, PE_num, only_back, show)
     os.chdir(r'./log/')
-    np.save('base_'+info, np.array([count,load_num]))
+    np.save('base_'+info, np.array(count))
     np.save('PE_in_workload_'+info, PE_in_workload)
     np.save('GTG_in_workload_'+info, GTG_in_workload)
     np.save('FTF_workload_'+info, FTF_workload)
@@ -816,14 +832,16 @@ import sys
 if __name__ == '__main__':
     mission_type = 1
     PE_num = 6
+    only_back = 1
     show = 1
 
-    if(len(sys.argv)==4):
+    if(len(sys.argv)==5):
         mission_type = int(sys.argv[1])
         PE_num = int(sys.argv[2])
-        show  = int(sys.argv[3])
+        only_back  = int(sys.argv[3])
+        show  = int(sys.argv[4])
     # print(mission_type)
-        run_sim_and_save(mission_type, PE_num, show)
+        run_sim_and_save(mission_type, PE_num, only_back, show)
     else:
         print("no parameter")
     # plt.show()
