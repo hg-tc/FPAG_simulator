@@ -668,10 +668,10 @@ def simulator(mission_type_in, PE_num_in,only_back, show):
         print("buffer ", waiting_buffer, next_ptr_buffer, necessery_ptr_buffer, inst_ptr)
         print("Done ", PE_array0.output_buffer_empty, ETF0.output_buffer_empty, FTF0.Done, ETE0.Done)
 
-        if(count > 200000):
-            for i in range(len(instruction_set2)):
-                if(processed[i]==False and i < 50000):
-                    print("error", i)
+        # if(count > 200000):
+        #     for i in range(len(instruction_set2)):
+        #         if(processed[i]==False and i < 50000):
+        #             print("error", i)
         # for i in range(-10,10):
         #         print(instruction_set2[2900+i],2900+i)
 
