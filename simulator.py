@@ -37,15 +37,15 @@ def simulator(mission_type_in, PE_num_in,only_back, show):
     wbm = bram(2)
 
     instruction_set = []
-    file_path = 'data/Inst_012085.txt'
+    file_path = './data/Inst_012085.txt'
     if(mission_type==1):
-        file_path = 'data/Inst_mono.txt'
+        file_path = './data/Inst_mono.txt'
     elif(mission_type==2):
-        file_path = 'data/Inst_fusion.txt'
+        file_path = './data/Inst_fusion.txt'
     elif(mission_type==3):
-        file_path = 'data/Inst_sfm2.txt'
+        file_path = './data/Inst_sfm2.txt'
     elif(mission_type==4):
-        file_path = 'data/Inst_sfm3.txt'
+        file_path = './data/Inst_sfm3.txt'
     with open(file_path,'r') as file:
         instruction = file.readline()
         counts = 0
@@ -59,14 +59,21 @@ def simulator(mission_type_in, PE_num_in,only_back, show):
     print(instruction_set)
     # generate small instruction
     instruction_set2 = []
-    LOAD_num = 0
-    ADD_num = 0
-    multi_num = 0
+    pre_num = 0
+    merge_num = 0
+    geng_num = 0
     GTG_num = 0
     ptr = 0
+
+    load_num = 0
+    acc_num = 0
+    ete_num = 0
+    gtg_num = 0
+
     while ptr < len(instruction_set):
         instruction_now = instruction_set[ptr]
         if instruction_now[0:4] == '0001':
+            pre_num += 1
             pi = int(instruction_now[4:8],2)
             rbs = int(instruction_now[8:17],2)
             mbd = int(instruction_now[8:17],2)
@@ -78,7 +85,7 @@ def simulator(mission_type_in, PE_num_in,only_back, show):
                     inst_last = int(instruction_now[31])
                     last = int(instruction_now[30])
                 instruction_set2.append([1,pi,rbs+i,mbd+i*6,last,inst_last])
-                LOAD_num += 1
+                load_num+=1
             # print('===============Load================')
             pass
         elif instruction_now[0:4] == '0010':
@@ -91,32 +98,35 @@ def simulator(mission_type_in, PE_num_in,only_back, show):
                     add_num += 1
                     # print(code, 'plus')
             instruction_set2.append([2,last,add_num])
-            ADD_num += 1
+            merge_num += 1
+            acc_num += 1
             # print('===============Add================')
             pass
         elif instruction_now[0:4] == '0011':
+            geng_num += 1
             pi = int(instruction_now[4:8],2)
             length = int(instruction_now[8:],2)
             for i in range(length):
                 if(i == length-1):
                     instruction_set2.append([3,pi,1])
-                    multi_num += 1
+                    ete_num += 1
                 else:
                     instruction_set2.append([3,pi,0])
-                    multi_num += 1
+                    ete_num += 1
                 # print('===============Element_nulti================')
             pass
         elif instruction_now[0:4] == '0100':
+            GTG_num += 1
             pi = int(instruction_now[4:8],2)
             length = int(instruction_now[8:],2)
             length = int(length*(length + 1) / 2)
             for i in range(length):
                 if(i == length-1):
-                    instruction_set2.append([4,pi,1])
-                    GTG_num += 1
+                    instruction_set2.append([4,pi,1])  
+                    gtg_num += 1
                 else:
                     instruction_set2.append([4,pi,0])
-                    GTG_num += 1
+                    gtg_num += 1
                 # print('===============GTG================')
             pass
         elif instruction_now[0:4] == '0101':
@@ -186,6 +196,10 @@ def simulator(mission_type_in, PE_num_in,only_back, show):
 
 
     data = []
+    print("num ", pre_num, merge_num, geng_num, GTG_num)
+    print("num2 ", load_num, acc_num, ete_num, gtg_num)
+    # while 1 :
+    #     pass
     load_num = 0
     acc_num = 0
     ete_num = 0
@@ -193,7 +207,7 @@ def simulator(mission_type_in, PE_num_in,only_back, show):
 
     Jacobian_comp = 0
     # executing
-    print("num ", LOAD_num, ADD_num, multi_num, GTG_num, inst_num)
+    
     processed = []
     for i in range(len(instruction_set2)):
         processed.append(False)
@@ -273,6 +287,7 @@ def simulator(mission_type_in, PE_num_in,only_back, show):
                                 ETE_inst_list.append([jump,None,None,None,None])
                             else:
                                 ETE_inst_list.append([None,None,None,None,None])
+                            
                         elif(mission_type==3):
                             # if(i==pi):
                             #     mission_list.append(3)
@@ -323,7 +338,6 @@ def simulator(mission_type_in, PE_num_in,only_back, show):
                     # PE_array0.input([1,1,6,6,6,0],[1,1,2,2,2,0],[jump,None,None,None,None,None])
                     if(mission_type == 1 or mission_type == 2):
                         ETE0.input(1, instruction_now[4])
-                        if(instruction_now[4]):LOAD_num+=1 
                     elif(mission_type == 3 or mission_type == 4):
                         multi_num,add_num = sfm_ETE0.input(2, instruction_now[4])
                         if(multi_num != None):
@@ -522,7 +536,6 @@ def simulator(mission_type_in, PE_num_in,only_back, show):
         ETE_result = sfm_ETE0.step()
         if(ETE_result):
             ETE0.input(1)
-            LOAD_num+=1 
             
 
         for i in range(PE_num):
@@ -668,12 +681,12 @@ def simulator(mission_type_in, PE_num_in,only_back, show):
         print("buffer ", waiting_buffer, next_ptr_buffer, necessery_ptr_buffer, inst_ptr)
         print("Done ", PE_array0.output_buffer_empty, ETF0.output_buffer_empty, FTF0.Done, ETE0.Done)
 
-        # if(count > 200000):
+        # if(count > 20000):
         #     for i in range(len(instruction_set2)):
-        #         if(processed[i]==False and i < 50000):
+        #         if(processed[i]==False ):
         #             print("error", i)
         # for i in range(-10,10):
-        #         print(instruction_set2[2900+i],2900+i)
+        #         print(instruction_set2[455+i],455+i)
 
         if(not waiting_buffer and not next_ptr_buffer and not necessery_ptr_buffer and inst_ptr is None and PE_array0.Done and GTG_array0.Done and ETF0.output_buffer_empty and FTF0.Done and ETE0.Done and all_excited):
             # for i in range(len(instruction_set2)):
